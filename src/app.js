@@ -65,18 +65,21 @@ function setup() {
 					o.material = new THREE.MeshBasicMaterial({ color: 0x303030 });
 					break;
 				case 'Glasses':
-					o.material = new THREE.MeshBasicMaterial({ color: 0x000000, wireframe: true });
+					o.material = new THREE.MeshBasicMaterial({
+						color: 0x000000,
+						// wireframe: true
+					});
 					break;
 			}
 		}
 		scene.add(pumo);
 
-		let geom = new THREE.PlaneGeometry(3.5, 3.5);
-		let mat = new THREE.ShaderMaterial({
-			uniforms: hairUniforms,
-			vertexShader: hairVertShader,
-			fragmentShader: hairFragShader
-		});
+		// let geom = new THREE.PlaneGeometry(3.5, 3.5);
+		// let mat = new THREE.ShaderMaterial({
+		// 	uniforms: hairUniforms,
+		// 	vertexShader: hairVertShader,
+		// 	fragmentShader: hairFragShader
+		// });
 		// scene.add(new THREE.Mesh(geom, mat));
 
 		scene.background = new THREE.Color( 0x404040 );
