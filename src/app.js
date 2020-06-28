@@ -6,10 +6,14 @@ import pumoHairTex from './pumo-hair-tex-01.png';
 import hairFragShader from './hair.frag';
 import hairVertShader from './hair.vert';
 
+const size = 300;
+
 const loader = new GLTFLoader();
+const center = new THREE.Vector2(size/2, size/2);
+const clock = new THREE.Clock();
 const cursor = new THREE.Vector2(0, 0);
-const u_resolution = new THREE.Vector2(window.innerWidth, window.innerHeight);
-const center = new THREE.Vector2(u_resolution.x/2, u_resolution.y/2);
+const u_resolution = new THREE.Vector2(size, size);
+const u_time = new THREE.Uniform(new Number(0.0));
 
 let camera, scene, renderer;
 let eagerness = 10;
@@ -19,6 +23,7 @@ const hairUniforms = {
 	colorA: { type: 'vec3', value: new THREE.Color(0xFF0000) },
 	colorB: { type: 'vec3', value: new THREE.Color(0x00FF00) },
 	u_resolution: { type: 'vec2', value: u_resolution },
+	u_time,
 	hair_tex: { type: 't', value: texLoader.load(pumoHairTex) },
 }
 
@@ -27,15 +32,14 @@ onmousemove = (e) => {
 }
 
 onresize = (_e) => {
-	renderer.setSize( window.innerWidth, window.innerHeight );
+	renderer.setSize( u_resolution );
 	// TODO Redo the camera thing
-	[ center.x, center.y ] = [ window.innerWidth/2, window.innerHeight/2 ];
-	[ hairUniforms.u_resolution.x, hairUniforms.u_resolution.y ] = [ window.innerWidth, window.innerHeight ];
+	[ center.x, center.y ] = [ size/2, size/2 ];
+	[ hairUniforms.u_resolution.x, hairUniforms.u_resolution.y ] = [ size, size ];
 }
 
 function setup() {
-	const aspect = window.innerWidth / window.innerHeight;
-	camera = new THREE.PerspectiveCamera( 10, aspect, 0.01, 1000 );	
+	camera = new THREE.PerspectiveCamera( 10, 1.0, 0.01, 1000 );	
 	camera.position.z = 20;
 	camera.lookAt(new THREE.Vector3(0,0,0))
 
@@ -49,36 +53,48 @@ function setup() {
 					o.material = new THREE.MeshBasicMaterial({ color: 0xffffff });
 					break;
 				case 'Hair':
-					// o.material = new THREE.ShaderMaterial({
-					// 	uniforms: hairUniforms,
-					// 	vertexShader: hairVertShader,
-					// 	fragmentShader: hairFragShader
-					// });
-					o.material = new THREE.MeshBasicMaterial({ map: texLoader.load(pumoHairTex) });
-					o.material.map.flipY = false;
+					o.material = new THREE.ShaderMaterial({
+						uniforms: hairUniforms,
+						vertexShader: hairVertShader,
+						fragmentShader: hairFragShader
+					});
+					// o.material = new THREE.MeshBasicMaterial({ map: texLoader.load(pumoHairTex) });
+					// o.material.map.flipY = false;
 					break;
 				case 'Beard':
 					o.material = new THREE.MeshBasicMaterial({ color: 0x303030 });
 					break;
 				case 'Glasses':
-					o.material = new THREE.MeshBasicMaterial({ color: 0x000000 });
+					o.material = new THREE.MeshBasicMaterial({ color: 0x000000, wireframe: true });
 					break;
 			}
 		}
 		scene.add(pumo);
+
+		let geom = new THREE.PlaneGeometry(3.5, 3.5);
+		let mat = new THREE.ShaderMaterial({
+			uniforms: hairUniforms,
+			vertexShader: hairVertShader,
+			fragmentShader: hairFragShader
+		});
+		// scene.add(new THREE.Mesh(geom, mat));
+
 		scene.background = new THREE.Color( 0x404040 );
+		clock.start();
 	}, undefined, function(error) {
         console.log(error);
 	});	
 
 	renderer = new THREE.WebGLRenderer( { antialias: true, alpha: true } );
-	renderer.setSize( window.innerWidth, window.innerHeight );
+	renderer.setPixelRatio(window.devicePixelRatio);
+	renderer.setSize( size, size );
 	document.body.appendChild( renderer.domElement );
 }
 
 function loop() {
 	if (scene && camera) {
-		let direction = { x: (cursor.x - center.x)/window.innerWidth, y: (center.y - cursor.y)/window.innerHeight };
+		u_time.value = clock.getElapsedTime();
+		let direction = { x: (cursor.x - center.x)/size, y: (center.y - cursor.y)/size };
 		[ camera.position.x, camera.position.y ] = [ -eagerness*direction.x, -eagerness*direction.y ];
 		camera.lookAt(new THREE.Vector3(0, 0, 0));
 		renderer.render( scene, camera );
